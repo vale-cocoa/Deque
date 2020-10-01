@@ -2,14 +2,34 @@ import XCTest
 @testable import Deque
 
 final class DequeTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(Deque().text, "Hello, World!")
+    var sut: Deque<Int>!
+    
+    override func setUp() {
+        super.setUp()
+        
+        sut = Deque<Int>()
     }
-
-    static var allTests = [
-        ("testExample", testExample),
-    ]
+    
+    override func tearDown() {
+        sut = nil
+        
+        super.tearDown()
+    }
+    
+    func testDequeSlice_withContiguousStorageIfAvailable() {
+        sut.append(contentsOf: [1, 2, 3, 4, 5])
+        var dequeSlice = DequeSlice(base: sut, bounds: 1..<5)
+        
+        XCTAssertEqual(dequeSlice.count, 4)
+        
+        XCTAssertNotNil(dequeSlice
+            .withContiguousMutableStorageIfAvailable { buff in
+                // In here subscripting the buffer is 0 based!
+                buff[0] = 10
+            }
+        )
+        XCTAssertEqual(dequeSlice[1], 10)
+        XCTAssertEqual(sut[1], 2)
+    }
+    
 }
