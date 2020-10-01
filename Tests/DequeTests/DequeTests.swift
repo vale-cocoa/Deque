@@ -16,6 +16,29 @@ final class DequeTests: XCTestCase {
         
         super.tearDown()
     }
+    
+    // MARK: - Initialize tests
+    func testInit() {
+        sut = Deque<Int>()
+        XCTAssertNotNil(sut)
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertEqual(sut.count, 0)
+        XCTAssertNil(sut.first)
+        XCTAssertNil(sut.last)
+    }
+    
+    func testInitFromSequence() {
+        let sequence = AnySequence(1...10)
+        sut = Deque(sequence)
+        
+        XCTAssertNotNil(sut)
+        XCTAssertFalse(sut.isEmpty)
+        XCTAssertEqual(sut.count, (1...10).count)
+        XCTAssertNotNil(sut.first)
+        XCTAssertNotNil(sut.last)
+        XCTAssertEqual(sut.map { $0 }, (1...10).map { $0 })
+    }
+    
     // MARK: - Slices tests
     func testSlice_withContiguousStorageIfAvailable() {
         sut.append(contentsOf: [1, 2, 3, 4, 5])
@@ -36,15 +59,15 @@ final class DequeTests: XCTestCase {
     
     // MARK: - Performance tests
     func testDequePerformance() {
-        measure(performanceLoopDeque)
+        //measure(performanceLoopDeque)
     }
     
     func testArrayPerformance() {
-        measure(performanceLoopArray)
+        //measure(performanceLoopArray)
     }
     
     func testCircularBufferPerformance() {
-        measure(performanceLoopCircularBuffer)
+        //measure(performanceLoopCircularBuffer)
     }
     
     // MARK: - Private helpers

@@ -6,19 +6,49 @@
 //
 import CircularBuffer
 
+/// A double ended queue, that is a queue which allows acces to its both ends with an
+/// amortized O(1) complexity.
+///
+/// `Deque` is an ordered, random-access collection, It basically presents the same
+/// interface and behavior of an array (including value semantics), but with the advantage
+/// of an amortized O(1) complexity for operations on the first position of its storage,
+/// rather than O(*n*) as arrays do.
 public struct Deque<Element> {
     private(set) var storage: CircularBuffer<Element>? = nil
     
+    /// Returns a new empty `Deque` instance.
     public init() { }
     
-    public init<S: Sequence>(elements: S) where S.Iterator.Element == Element {
+    /// Returns a new `Deque` instance initialized with the contents of the given
+    /// sequence of elements.
+    ///
+    /// - Parameter _: the sequence of elements to initialize with.
+    /// - Returns:  a new `Deque` instance containing all the elements of the given
+    ///             sequence, stored in the same order.
+    /// - Complexity:   O(*n*) where *n* is the number of elements of the given
+    ///                 sequence. Amortized O(1) in case the given sequence's
+    ///                 method
+    ///                 `withContiguousStorageIfAvailable(_:)` offers a
+    ///                 view into all its elements.
+    public init<S: Sequence>(_ elements: S) where S.Iterator.Element == Element {
         let newStorage = CircularBuffer(elements: elements)
         guard !newStorage.isEmpty else { return }
         
         storage = newStorage
     }
     
-    public init<C: Collection>(elements: C) where C.Iterator.Element == Element {
+    /// Returns a new `Deque` instance initialized with the contents of the given
+    /// collection of elements.
+    ///
+    /// - Parameter _: the collection of elements to initialize with.
+    /// - Returns:  a new `Deque` instance containing all the elements of the given
+    ///             collection, stored in the same order.
+    /// - Complexity:   O(*n*) where *n* is count of elements of the given
+    ///                 collection. Amortized O(1) in case the given collection's
+    ///                 method
+    ///                 `withContiguousStorageIfAvailable(_:)` offers a
+    ///                 view into all its stored elements.
+    public init<C: Collection>(_ elements: C) where C.Iterator.Element == Element {
         guard !elements.isEmpty else { return }
         
         storage = CircularBuffer(elements: elements)
@@ -28,14 +58,33 @@ public struct Deque<Element> {
 
 // MARK: - Public Interface
 extension Deque {
+    /// The first element stored in this deque. `Nil` when `isEmpty` is equal to
+    /// `true`.
+    ///
+    /// - Note: equals `last` when `count` is equal to `1` or when `isEmpty` is
+    ///         equal to `true`.
     public var first: Element? { storage?.first }
     
+    /// The last element stored in this deque. `Nil` when `isEmpty` is equal to
+    /// `true`.
+    ///
+    /// - Note: equals `first` when `count` is equal to `1` or when `isEmpty`
+    ///         is equal to `true`.
     public var last: Element? { storage?.last }
     
+    /// Add a new element to this queue.
+    ///
+    /// - Parameter _: the new element to add to the queue.
+    /// - Note: equivalent to using `append(_:)` method.
     public mutating func enqueue(_ newElement: Element) {
         append(newElement)
     }
     
+    /// Adds –in the same order– the elments  contained in the given sequence to this
+    /// queue.
+    ///
+    /// - Parameter contentsOf: the sequence of elements to add.
+    /// - Note: equivalent to using `append(contentsOf:)` method.
     public mutating func enqueue<S: Sequence>(contentsOf newElements: S) where S.Iterator.Element == Element {
         append(contentsOf: newElements)
     }
@@ -116,6 +165,8 @@ extension Deque: Collection, MutableCollection {
     public var endIndex: Int { storage?.count ?? 0 }
     
     public var count: Int { storage?.count ?? 0}
+    
+    public var isEmpty: Bool { storage?.isEmpty ?? true }
     
     public func index(after i: Int) -> Int {
         i + 1
@@ -308,14 +359,6 @@ extension Deque: RangeReplaceableCollection {
         guard count > 0 else { return }
         
         self.storage = CircularBuffer(repeating: repeatedValue, count: count)
-    }
-    
-    public init<S>(_ elements: S) where S : Sequence, Element == S.Iterator.Element {
-        let storage = CircularBuffer(elements: elements)
-        
-        guard storage.count > 0 else { return }
-        
-        self.storage = storage
     }
     
     public mutating func append(_ newElement: Self.Element) {
