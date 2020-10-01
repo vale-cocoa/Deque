@@ -266,7 +266,7 @@ extension Deque: BidirectionalCollection {
     
 }
 
-// MARK: - RandomAccessCollection
+// MARK: - RandomAccessCollection conformance
 extension Deque: RandomAccessCollection {
     public func index(_ i: Int, offsetBy distance: Int) -> Int {
         i + distance
@@ -417,6 +417,7 @@ extension Deque: RangeReplaceableCollection {
         _checkForEmptyAtEndOfMutation()
     }
     
+    @discardableResult
     public mutating func popLast() -> Element? {
         _makeUnique()
         defer {
@@ -426,6 +427,7 @@ extension Deque: RangeReplaceableCollection {
         return storage!.popLast()
     }
     
+    @discardableResult
     public mutating func popFirst() -> Element? {
         _makeUnique()
         defer {
@@ -534,13 +536,13 @@ extension Deque: CustomStringConvertible, CustomDebugStringConvertible {
             return result
         }
 
-        public var description: String {
-            return makeDescription(debug: false)
-        }
+    public var description: String {
+        return makeDescription(debug: false)
+    }
     
-        public var debugDescription: String {
-            return makeDescription(debug: true)
-        }
+    public var debugDescription: String {
+        return makeDescription(debug: true)
+    }
     
 }
 
@@ -560,7 +562,7 @@ extension Deque {
             self.storage = CircularBuffer(capacity: additionalCapacity)
         } else if !_isUnique {
             storage = storage!.copy(additionalCapacity: additionalCapacity)
-        } else {
+        } else if additionalCapacity > 0 {
             storage!.allocateAdditionalCapacity(additionalCapacity)
         }
     }

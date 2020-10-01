@@ -1,5 +1,6 @@
 import XCTest
 @testable import Deque
+import CircularBuffer
 
 final class DequeTests: XCTestCase {
     var sut: Deque<Int>!
@@ -31,6 +32,75 @@ final class DequeTests: XCTestCase {
         )
         XCTAssertEqual(dequeSlice[1], 10)
         XCTAssertEqual(sut[1], 2)
+    }
+    
+    // MARK: - Performance tests
+    func testDequePerformance() {
+        measure(performanceLoopDeque)
+    }
+    
+    func testArrayPerformance() {
+        measure(performanceLoopArray)
+    }
+    
+    func testCircularBufferPerformance() {
+        measure(performanceLoopCircularBuffer)
+    }
+    
+    // MARK: - Private helpers
+    private func performanceLoopDeque() {
+        let outerCount: Int = 10_000
+        let innerCount: Int = 20
+        var accumulator = 0
+        for _ in 1...outerCount {
+            var deque = Deque<Int>()
+            deque.reserveCapacity(innerCount)
+            for i in 1...innerCount {
+                deque.append(i)
+                accumulator ^= (deque.last ?? 0)
+            }
+            for _ in 1...innerCount {
+                accumulator ^= (deque.first ?? 0)
+                deque.popFirst()
+            }
+        }
+        XCTAssert(accumulator == 0)
+    }
+    
+    private func performanceLoopArray() {
+        let outerCount: Int = 10_000
+        let innerCount: Int = 20
+        var accumulator = 0
+        for _ in 1...outerCount {
+            var array = Array<Int>()
+            for i in 1...innerCount {
+                array.append(i)
+                accumulator ^= (array.last ?? 0)
+            }
+            for _ in 1...innerCount {
+                accumulator ^= (array.first ?? 0)
+                array.remove(at: 0)
+            }
+        }
+        XCTAssert(accumulator == 0)
+    }
+    
+    private func performanceLoopCircularBuffer() {
+        let outerCount: Int = 10_000
+        let innerCount: Int = 20
+        var accumulator = 0
+        for _ in 1...outerCount {
+            let ringBuffer = CircularBuffer<Int>(capacity: innerCount)
+            for i in 1...innerCount {
+                ringBuffer.append(i)
+                accumulator ^= (ringBuffer.last ?? 0)
+            }
+            for _ in 1...innerCount {
+                accumulator ^= (ringBuffer.first ?? 0)
+                ringBuffer.popFirst()
+            }
+        }
+        XCTAssert(accumulator == 0)
     }
     
 }

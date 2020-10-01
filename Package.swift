@@ -24,6 +24,6 @@ let package = Package(
             dependencies: ["CircularBuffer", ]),
         .testTarget(
             name: "DequeTests",
-            dependencies: ["Deque"]),
+            dependencies: ["Deque", "CircularBuffer"]),
     ]
 )
