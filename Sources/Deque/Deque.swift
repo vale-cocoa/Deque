@@ -32,6 +32,28 @@ extension Deque {
     
     public var last: Element? { storage?.last }
     
+    public mutating func enqueue(_ newElement: Element) {
+        append(newElement)
+    }
+    
+    public mutating func enqueue<S: Sequence>(contentsOf newElements: S) where S.Iterator.Element == Element {
+        append(contentsOf: newElements)
+    }
+    
+    @discardableResult
+    public mutating func dequeue() -> Element? {
+        _makeUnique()
+        
+        return storage?.popFirst()
+    }
+    
+    @discardableResult
+    public mutating func dequeue(_ k: Int) -> [Element] {
+        _makeUnique()
+        
+        return storage!.removeFirst(k)
+    }
+    
     public mutating func push(_ newElement: Element) {
         _makeUnique()
         storage!.push(newElement)
@@ -87,11 +109,7 @@ extension Deque: Collection, MutableCollection {
     
     public typealias Iterator = IndexingIterator<Deque<Element>>
     
-    //#if swift(>=4.1) || (swift(>=3.3) && !swift(>=4.0))
-    public typealias SubSequence = Slice<Deque<Element>>
-    //#else
-    //public typealias SubSequence = RangeReplaceableRandomAccessSlice<Deque<Element>>
-    //#endif
+    public typealias SubSequence = DequeSlice<Element>
     
     public var startIndex: Int { 0 }
     

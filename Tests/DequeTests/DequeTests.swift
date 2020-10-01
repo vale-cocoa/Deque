@@ -15,10 +15,11 @@ final class DequeTests: XCTestCase {
         
         super.tearDown()
     }
-    
-    func testDequeSlice_withContiguousStorageIfAvailable() {
+    // MARK: - Slices tests
+    func testSlice_withContiguousStorageIfAvailable() {
         sut.append(contentsOf: [1, 2, 3, 4, 5])
-        var dequeSlice = DequeSlice(base: sut, bounds: 1..<5)
+        
+        var dequeSlice = sut[1..<5]
         
         XCTAssertEqual(dequeSlice.count, 4)
         

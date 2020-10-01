@@ -9,7 +9,13 @@ import CircularBuffer
 public struct DequeSlice<Element> {
     public typealias Base = Deque<Element>
     
-    private(set) var _slice: Slice<Base>
+    #if swift(>=4.1) || (swift(>=3.3) && !swift(>=4.0))
+    public typealias _Slice = Slice<Base>
+    #else
+    public typealias _Slice = RangeReplaceableRandomAccessSlice<Base>
+    #endif
+    
+    private(set) var _slice: _Slice
     
     public private(set) var base: Base {
         get { _slice.base }
