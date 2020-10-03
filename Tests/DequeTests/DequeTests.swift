@@ -1057,24 +1057,6 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(sut.debugDescription, "Optional(Deque.Deque<Swift.Int>([1, 2, 3, 4, 5]))")
     }
     
-    // MARK: - DequeSlice tests
-    func testSlice_withContiguousStorageIfAvailable() {
-        sut.append(contentsOf: [1, 2, 3, 4, 5])
-        
-        var dequeSlice = sut[1..<5]
-        
-        XCTAssertEqual(dequeSlice.count, 4)
-        
-        XCTAssertNotNil(dequeSlice
-            .withContiguousMutableStorageIfAvailable { buff in
-                // In here subscripting the buffer is 0 based!
-                buff[0] = 10
-            }
-        )
-        XCTAssertEqual(dequeSlice[1], 10)
-        XCTAssertEqual(sut[1], 2)
-    }
-    
     // MARK: - Performance tests
     func testDequePerformance() {
         //measure(performanceLoopDeque)
@@ -1146,37 +1128,7 @@ final class DequeTests: XCTestCase {
     
     
     func assertValueSemantics(_ copy: Deque<Int>, file: StaticString = #file, line: UInt = #line) {
-        XCTAssertNotEqual(copy, sut, "copy contains same elements of original after mutation", file: file, line: line)
-        XCTAssertFalse(sut.storage === copy.storage, "copy has same storage instance of original", file: file, line: line)
+        assertAreDifferentValuesAndHaveDifferentStorage(sut: sut, copy: copy, file: file, line: line)
     }
     
 }
-
-struct SequenceImplementingWithContiguousStorage: Sequence {
-    let base: Array<Int>
-
-    
-    typealias Element = Int
-    
-     typealias Iterator = AnyIterator<Int>
-    
-    func makeIterator() -> Iterator {
-        var idx = 0
-        
-        return AnyIterator<Int> {
-            guard idx < base.count else { return nil }
-            
-            defer { idx += 1 }
-            
-            return base[idx]
-        }
-    }
-    
-    func withContiguousStorageIfAvailable<R>(_ body: (UnsafeBufferPointer<Int>) throws -> R) rethrows -> R? {
-        
-        return try base.withContiguousStorageIfAvailable(body)
-    }
-    
-}
-
-

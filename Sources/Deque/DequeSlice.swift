@@ -212,9 +212,9 @@ extension DequeSlice: Collection, MutableCollection, BidirectionalCollection {
         set { _slice[position] = newValue }
     }
     
-    public subscript(bounds: Range<Base.Index>) -> Subsequence {
-        get { DequeSlice(base: base, bounds: bounds) }
-        set { replaceSubrange(bounds, with: newValue) }
+    public subscript(otherBounds: Range<Base.Index>) -> Subsequence {
+        get { DequeSlice(base: base, bounds: otherBounds) }
+        set { replaceSubrange(otherBounds, with: newValue) }
     }
     
     public func index(after i: Base.Index) -> Base.Index {
