@@ -103,8 +103,11 @@ extension Deque {
     @discardableResult
     public mutating func dequeue() -> Element? {
         _makeUnique()
+        defer {
+            _checkForEmptyAtEndOfMutation()
+        }
         
-        return storage?.popFirst()
+        return storage!.popFirst()
     }
     
     /// Removes and returns the first *k* elements in the queue.
@@ -117,6 +120,9 @@ extension Deque {
     @discardableResult
     public mutating func dequeue(_ k: Int) -> [Element] {
         _makeUnique()
+        defer {
+            _checkForEmptyAtEndOfMutation()
+        }
         
         return storage!.removeFirst(k)
     }
@@ -307,7 +313,7 @@ extension Deque: Collection, MutableCollection {
         
         // Create an UnsafeMutableBufferPointer over work that we
         // can pass to body
-        var inoutBuffer = work.storage?.unsafeMutableBufferPointer ?? UnsafeMutableBufferPointer<Element>(start: nil, count: 0)
+        var inoutBuffer = work.storage!.unsafeMutableBufferPointer
         let basePointer = inoutBuffer.baseAddress
         let initialCount = inoutBuffer.count
         
@@ -315,6 +321,7 @@ extension Deque: Collection, MutableCollection {
         defer {
             precondition(basePointer == inoutBuffer.baseAddress && initialCount == inoutBuffer.count, "Deque withContiguousMutableStorageIfAvailable: replacing the buffer is not allowed")
             (work, self) = (self, work)
+            _checkForEmptyAtEndOfMutation()
         }
         
         // Invoke body
@@ -328,7 +335,7 @@ extension Deque: Collection, MutableCollection {
     
     // MARK: - Functional methods
     public func allSatisfy(_ predicate: (Element) throws -> Bool) rethrows -> Bool {
-        for element in self where try predicate(element) == false {
+        for i in startIndex..<endIndex where try predicate(storage![i]) == false {
             
             return false
         }
@@ -357,8 +364,7 @@ extension Deque: Collection, MutableCollection {
     public func flatMap<SegmentOfResult>(_ transform: (Element) throws -> SegmentOfResult) rethrows -> [SegmentOfResult.Element] where SegmentOfResult: Sequence {
         var result = [SegmentOfResult.Element]()
         try storage?.forEach {
-            let iterResult = try transform($0)
-            result.append(contentsOf: iterResult)
+            result.append(contentsOf: try transform($0))
         }
         
         return result
@@ -434,8 +440,8 @@ extension Deque: RandomAccessCollection {
 // MARK: - RangeReplaceableCollection conformance
 extension Deque: RangeReplaceableCollection {
     public mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C) where C : Collection, Self.Element == C.Element {
-        let difference = count - subrange.count + newElements.count
-        let additionalCapacity = difference < 0 ? -difference : 0
+        let difference = (count - subrange.count + newElements.count) - count
+        let additionalCapacity = difference < 0 ? 0 : difference
         _makeUnique(additionalCapacity: additionalCapacity)
         storage!.replace(subRange: subrange, with: newElements)
         _checkForEmptyAtEndOfMutation()
@@ -468,8 +474,8 @@ extension Deque: RangeReplaceableCollection {
         storage!.insertAt(index: i, contentsOf: CollectionOfOne(newElement))
     }
     
-    public mutating func insert<S>(contentsOf newElements: S, at i: Self.Index) where S : Collection, Self.Element == S.Element {
-        _makeUnique(additionalCapacity: newElements.underestimatedCount)
+    public mutating func insert<C: Collection>(contentsOf newElements: C, at i: Self.Index) where  Self.Element == C.Element {
+        _makeUnique(additionalCapacity: newElements.count)
         storage!.insertAt(index: i, contentsOf: newElements)
         _checkForEmptyAtEndOfMutation()
     }
@@ -707,7 +713,7 @@ extension Deque {
     }
     
     @inline(__always)
-    mutating private func _checkForEmptyAtEndOfMutation() {
+    private mutating func _checkForEmptyAtEndOfMutation() {
         if self.storage?.count == 0 {
             self.storage = nil
         }
