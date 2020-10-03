@@ -531,37 +531,6 @@ extension Deque: RangeReplaceableCollection {
         storage!.removeAll(keepCapacity: keepCapacity)
     }
     
-    public mutating func removeAll(where shouldBeRemoved: (Self.Element) throws -> Bool) rethrows {
-        guard storage != nil else { return }
-        
-        _makeUnique()
-        var ranges = [Range<Int>]()
-        var currRange: Range<Int>? = nil
-        var currIdx = 0
-        try storage!.forEach { element in
-            if try shouldBeRemoved(element) {
-                currRange = (currRange?.lowerBound ?? currIdx)..<currIdx + 1
-            } else if let newRange = currRange {
-                ranges.append(newRange)
-                currRange = nil
-            }
-            currIdx += 1
-        }
-        if let newRange = currRange {
-            ranges.append(newRange)
-        }
-        
-        ranges.forEach { rangeOfRemoval in
-            self.storage!
-                .removeAt(
-                    index: rangeOfRemoval.lowerBound,
-                    count: rangeOfRemoval.count,
-                    keepCapacity: false
-                )
-        }
-        _checkForEmptyAtEndOfMutation()
-    }
-    
     @discardableResult
     public mutating func popLast() -> Element? {
         _makeUnique()

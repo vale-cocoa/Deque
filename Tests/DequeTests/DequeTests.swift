@@ -160,31 +160,21 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(sut.last, 2)
         
         // value semantics:
-        prevCount = sut.count
         var copy = sut!
         copy.enqueue(3)
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(sut.last, 2)
-        XCTAssertEqual(copy.count, prevCount + 1)
-        XCTAssertEqual(copy.last, 3)
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testEnqueueSequence() {
-        var prevCount = sut.count
+        let prevCount = sut.count
         sut.enqueue(contentsOf: [1, 2, 3, 4, 5])
         XCTAssertEqual(sut.count, prevCount + 5)
         XCTAssertEqual(sut.last, 5)
         
         // value semantics:
-        prevCount = sut.count
         var copy = sut!
         copy.enqueue(contentsOf: [6, 7, 8, 9, 10])
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(sut.last, 5)
-        XCTAssertEqual(copy.count, prevCount + 5)
-        XCTAssertEqual(copy.last, 10)
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     
@@ -209,15 +199,9 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(Array(sut), [2, 3, 4, 5])
         
         // value semantics:
-        prevFirst = sut.first
-        prevCount = sut.count
         var copy = sut!
-        XCTAssertEqual(copy.dequeue(), prevFirst)
-        XCTAssertEqual(sut.first, prevFirst)
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(copy.count, prevCount - 1)
-        XCTAssertNotEqual(copy.first, sut.first)
-        XCTAssertFalse(sut.storage === copy.storage)
+        copy.dequeue()
+        assertValueSemantics(copy)
     }
     
     func testDequeueElements() {
@@ -225,21 +209,16 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(sut.dequeue(0), [])
         
         sut = [1, 2, 3, 4, 5, 6, 7 ,8, 9, 10]
-        var previousCount = sut.count
-        var previousElements = Array(sut)
+        let previousCount = sut.count
+        let previousElements = Array(sut)
         XCTAssertEqual(sut.dequeue(3), Array(previousElements[0..<3]))
         XCTAssertEqual(Array(sut), Array(previousElements[3..<previousElements.endIndex]))
         XCTAssertEqual(sut.count, previousCount - 3)
         
         // value semantics:
-        previousCount = sut.count
-        previousElements = Array(sut)
         var copy = sut!
-        XCTAssertEqual(copy.dequeue(3), Array(previousElements[0..<3]))
-        XCTAssertEqual(sut.count, previousCount)
-        XCTAssertEqual(Array(sut), previousElements)
-        XCTAssertEqual(copy.count, previousCount - 3)
-        XCTAssertFalse(sut.storage === copy.storage)
+        copy.dequeue(3)
+        assertValueSemantics(copy)
     }
     
     // MARK: - push(_:) and push(contentsOf:) tests
@@ -255,14 +234,9 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(sut.first, 2)
         
         // value semantics:
-        prevCount = sut.count
         var copy = sut!
         copy.push(3)
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(sut.first, 2)
-        XCTAssertEqual(copy.count, prevCount + 1)
-        XCTAssertEqual(copy.first, 3)
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testPushContentsOfSequence() {
@@ -289,18 +263,9 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(Array(sut), [1, 2, 3, 4, 5].reversed())
         
         // value semantics:
-        prevCount = sut.count
         var copy = sut!
         copy.push(contentsOf: AnySequence([6, 7, 8, 9, 10]))
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(sut.last, 1)
-        XCTAssertEqual(sut.first, 5)
-        XCTAssertEqual(Array(sut), [1, 2, 3, 4, 5].reversed())
-        XCTAssertEqual(copy.count, prevCount + 5)
-        XCTAssertEqual(copy.first, 10)
-        XCTAssertEqual(copy.last, 1)
-        XCTAssertEqual(Array(copy), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].reversed())
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testPushContentsOfCollection() {
@@ -327,18 +292,9 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(Array(sut), [1, 2, 3, 4, 5].reversed())
         
         // value semantics:
-        prevCount = sut.count
         var copy = sut!
         copy.push(contentsOf: AnyCollection([6, 7, 8, 9, 10]))
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(sut.last, 1)
-        XCTAssertEqual(sut.first, 5)
-        XCTAssertEqual(Array(sut), [1, 2, 3, 4, 5].reversed())
-        XCTAssertEqual(copy.count, prevCount + 5)
-        XCTAssertEqual(copy.first, 10)
-        XCTAssertEqual(copy.last, 1)
-        XCTAssertEqual(Array(copy), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].reversed())
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     // MARK: - prepend(contentsOf:) tests
@@ -366,18 +322,9 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(Array(sut), [1, 2, 3, 4, 5])
         
         // value semantics:
-        prevCount = sut.count
         var copy = sut!
         copy.prepend(contentsOf: AnySequence([6, 7, 8, 9, 10]))
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(sut.last, 5)
-        XCTAssertEqual(sut.first, 1)
-        XCTAssertEqual(Array(sut), [1, 2, 3, 4, 5])
-        XCTAssertEqual(copy.count, prevCount + 5)
-        XCTAssertEqual(copy.first, 6)
-        XCTAssertEqual(copy.last, 5)
-        XCTAssertEqual(Array(copy), [6, 7, 8, 9, 10, 1, 2, 3, 4, 5])
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
         
         // When sequence implements
         // withContiguousStorageIfAvailable(_:) method:
@@ -425,15 +372,7 @@ final class DequeTests: XCTestCase {
         prevCount = sut.count
         var copy = sut!
         copy.prepend(contentsOf: AnyCollection([6, 7, 8, 9, 10]))
-        XCTAssertEqual(sut.count, prevCount)
-        XCTAssertEqual(sut.last, 5)
-        XCTAssertEqual(sut.first, 1)
-        XCTAssertEqual(Array(sut), [1, 2, 3, 4, 5])
-        XCTAssertEqual(copy.count, prevCount + 5)
-        XCTAssertEqual(copy.first, 6)
-        XCTAssertEqual(copy.last, 5)
-        XCTAssertEqual(Array(copy), [6, 7, 8, 9, 10, 1, 2, 3, 4, 5])
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     // MARK: - Collection, BidirectionalCollection, MutableCollection, RandomAccessCollection tests
@@ -536,8 +475,7 @@ final class DequeTests: XCTestCase {
             copy[idx] -= 10
             XCTAssertNotEqual(sut[idx], copy[idx])
         }
-        XCTAssertNotEqual(Array(sut), Array(copy))
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testSubscriptRange() {
@@ -618,8 +556,7 @@ final class DequeTests: XCTestCase {
             }
         }
         wait(for: [exp3], timeout: 1)
-        XCTAssertNotEqual(Array(copy), Array(sut))
-        XCTAssertFalse(copy.storage === sut.storage)
+        assertValueSemantics(copy)
     }
     
     func testWithContiguousStorageIfAvailable() {
@@ -833,9 +770,7 @@ final class DequeTests: XCTestCase {
         sut = [1, 2, 3, 4, 5]
         var copy = sut!
         copy.replaceSubrange(copy.startIndex..., with: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        XCTAssertEqual(Array(copy), [10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        XCTAssertNotEqual(Array(copy), Array(sut))
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testAppendElement() {
@@ -843,8 +778,7 @@ final class DequeTests: XCTestCase {
         // We are just gonna check value semnatics here:
         var copy = sut!
         copy.append(1)
-        XCTAssertNotEqual(Array(copy), Array(sut))
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testAppendContentsOfSequence() {
@@ -859,8 +793,7 @@ final class DequeTests: XCTestCase {
         // …and test value semantics too:
         var copy = sut!
         copy.append(contentsOf: [1, 2, 3, 4, 5])
-        XCTAssertNotEqual(Array(copy), Array(sut))
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testInsertElementAt() {
@@ -870,8 +803,7 @@ final class DequeTests: XCTestCase {
         sut = [1, 2, 3, 4, 5]
         var copy = sut!
         copy.insert(0, at: 0)
-        XCTAssertNotEqual(Array(copy), Array(sut))
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testInsertContentsOfCollectionAt() {
@@ -886,12 +818,243 @@ final class DequeTests: XCTestCase {
         // …and of course we also test value semantics:
         var copy = sut!
         copy.insert(contentsOf: [1, 2, 3, 4, 5], at: copy.endIndex)
-        XCTAssertNotEqual(Array(copy), Array(sut))
-        XCTAssertFalse(sut.storage === copy.storage)
+        assertValueSemantics(copy)
     }
     
     func testRemoveElementAt() {
-        XCTFail("Must implement this test!")
+        // Main functionalities are backed by CircularBuffer,
+        // therefore we just test a special case here: when the
+        // removal makes the deque empty, then its storage becomes
+        // nil:
+        sut = [1]
+        let _ = sut.remove(at: sut.startIndex)
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // …and of course we also test value semantics:
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        let _ = copy.remove(at: 1)
+        assertValueSemantics(copy)
+    }
+    
+    func testRemoveSubrange() {
+        // Main functionalities are backed by CircularBuffer,
+        // therefore we just test a special case here: when
+        // subrange includes all elements, then storage becomes nil:
+        sut = [1, 2, 3, 4, 5]
+        sut.removeSubrange(sut.startIndex..<sut.endIndex)
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // …and of course we also test value semantics:
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        copy.removeSubrange(copy.startIndex..<copy.index(before: sut.endIndex))
+        assertValueSemantics(copy)
+    }
+    
+    func testRemoveFirstElement() {
+        let elements = [1, 2, 3]
+        sut = Deque(elements)
+        
+        XCTAssertEqual(sut.removeFirst(), elements.first)
+        XCTAssertEqual(sut.count, elements.count - 1)
+        XCTAssertEqual(Array(sut), Array(elements.dropFirst()))
+        
+        sut = [1]
+        let _ = sut.removeFirst()
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // value semantics:
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        let _ = copy.removeFirst()
+        assertValueSemantics(copy)
+    }
+    
+    func testRemoveFirstKElements() {
+        // Main functionalities are backed by CircularBuffer, we
+        // just test a special case here: when removal makes the
+        // deque instance empty, then storage is nil
+        sut = [1, 2, 3, 4, 5]
+        sut.removeFirst(5)
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // …and value semantics as well:
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        copy.removeFirst(2)
+        assertValueSemantics(copy)
+    }
+    
+    func testRemoveAllKeepingCapacity() {
+        XCTAssertNil(sut.storage)
+        sut.removeAll(keepingCapacity: true)
+        XCTAssertNil(sut.storage)
+        
+        sut = [1, 2, 3, 4, 5]
+        sut.removeAll(keepingCapacity: true)
+        XCTAssertNotNil(sut.storage)
+        
+        sut = [1, 2, 3, 4, 5]
+        sut.removeAll(keepingCapacity: false)
+        XCTAssertNil(sut.storage)
+    }
+    
+    func testPopLast() {
+        // Main functionalities are backed by CircularBuffer,
+        // here we just test a special case: when becomes empty,
+        // then storage is set to nil:
+        sut = [1]
+        sut.popLast()
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // value semantics
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        copy.popLast()
+        assertValueSemantics(copy)
+    }
+    
+    func testPopFirst() {
+        // Main functionalities are backed by CircularBuffer,
+        // here we just test a special case: when becomes empty,
+        // then storage is set to nil:
+        sut = [1]
+        sut.popFirst()
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // value semantics
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        copy.popFirst()
+        assertValueSemantics(copy)
+    }
+    
+    func testRemoveLastElement() {
+        let elements = [1, 2, 3]
+        sut = Deque(elements)
+        
+        XCTAssertEqual(sut.removeLast(), elements.last)
+        XCTAssertEqual(sut.count, elements.count - 1)
+        XCTAssertEqual(Array(sut), Array(elements.dropLast()))
+        
+        sut = [1]
+        let _ = sut.removeLast()
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // value semantics:
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        let _ = copy.removeLast()
+        assertValueSemantics(copy)
+    }
+    
+    func testRemoveLastKElements() {
+        // Main functionalities are backed by CircularBuffer, we
+        // just test a special case here: when removal makes the
+        // deque instance empty, then storage is nil
+        sut = [1, 2, 3, 4, 5]
+        sut.removeLast(5)
+        XCTAssertTrue(sut.isEmpty)
+        XCTAssertNil(sut.storage)
+        
+        // …and value semantics as well:
+        sut = [1, 2, 3, 4, 5]
+        var copy = sut!
+        copy.removeLast(2)
+        assertValueSemantics(copy)
+    }
+    
+    // MARK: - Tests Equatable conformance
+    func testEquatable() {
+        XCTAssertEqual(sut, Deque<Int>())
+        
+        sut = [1, 2, 3, 4, 5]
+        XCTAssertNotEqual(sut, Deque<Int>())
+        
+        let copy = sut!
+        XCTAssertTrue(sut.storage === copy.storage)
+        XCTAssertEqual(sut, copy)
+        
+        let other: Deque<Int> = [1, 2, 3, 4, 5, 6]
+        XCTAssertNotEqual(sut.count, other.count)
+        XCTAssertNotEqual(sut, other)
+        
+        sut.append(6)
+        XCTAssertEqual(sut.count, other.count)
+        XCTAssertEqual(sut, other)
+        for idx in 0..<sut.count {
+            XCTAssertEqual(sut[idx], other[idx])
+        }
+        
+        sut[sut.endIndex - 1] = 10
+        XCTAssertEqual(sut.count, other.count)
+        XCTAssertNotEqual(sut, other)
+        var indexesWhereDifferent = [Int]()
+        for idx in 0..<sut.count where sut[idx] != other[idx] {
+            indexesWhereDifferent.append(idx)
+        }
+        XCTAssertFalse(indexesWhereDifferent.isEmpty)
+    }
+    
+    func testHashable() {
+        var set = Set<Deque<Int>>()
+        set.insert(sut)
+        XCTAssertTrue(set.contains(sut))
+        
+        var copy = sut!
+        let (inserted, _) = set.insert(copy)
+        XCTAssertFalse(inserted)
+        
+        copy.append(1)
+        let afterMutation = set.insert(copy)
+        XCTAssertTrue(afterMutation.inserted)
+        XCTAssertTrue(afterMutation.memberAfterInsert.storage === copy.storage)
+        XCTAssertEqual(afterMutation.memberAfterInsert.hashValue, copy.hashValue)
+    }
+    
+    // MARK: - Codable conformance
+    func testEncode() {
+        sut = [1, 2, 3, 4, 5]
+        let encoder = JSONEncoder()
+        XCTAssertNoThrow(try encoder.encode(sut))
+    }
+    
+    func testDecode() {
+        sut = [1, 2, 3, 4, 5]
+        let encoder = JSONEncoder()
+        let data = try! encoder.encode(sut)
+        
+        let decoder = JSONDecoder()
+        XCTAssertNoThrow(try decoder.decode(Deque<Int>.self, from: data))
+    }
+    
+    func testEncodeThanDecode() {
+        sut = [1, 2, 3, 4, 5]
+        let encoder = JSONEncoder()
+        let data = try! encoder.encode(sut)
+        
+        let decoder = JSONDecoder()
+        let decoded = try! decoder.decode(Deque<Int>.self, from: data)
+        XCTAssertEqual(decoded, sut)
+    }
+    
+    // MARK: - Custom(Debug)StringConvertible conformance tests
+    func testDescription() {
+        sut = [1, 2, 3, 4, 5]
+        XCTAssertEqual(sut.description, "Deque[1, 2, 3, 4, 5]")
+    }
+    
+    func testDebugDescription() {
+        sut = [1, 2, 3, 4, 5]
+        XCTAssertEqual(sut.debugDescription, "Optional(Deque.Deque<Swift.Int>([1, 2, 3, 4, 5]))")
     }
     
     // MARK: - DequeSlice tests
@@ -979,6 +1142,12 @@ final class DequeTests: XCTestCase {
             }
         }
         XCTAssert(accumulator == 0)
+    }
+    
+    
+    func assertValueSemantics(_ copy: Deque<Int>, file: StaticString = #file, line: UInt = #line) {
+        XCTAssertNotEqual(copy, sut, "copy contains same elements of original after mutation", file: file, line: line)
+        XCTAssertFalse(sut.storage === copy.storage, "copy has same storage instance of original", file: file, line: line)
     }
     
 }
