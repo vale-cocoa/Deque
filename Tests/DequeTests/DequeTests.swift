@@ -1128,7 +1128,7 @@ final class DequeTests: XCTestCase {
     
     
     func assertValueSemantics(_ copy: Deque<Int>, file: StaticString = #file, line: UInt = #line) {
-        assertAreDifferentValuesAndHaveDifferentStorage(sut: sut, copy: copy, file: file, line: line)
+        assertAreDifferentValuesAndHaveDifferentStorage(lhs: sut, rhs: copy, file: file, line: line)
     }
     
 }

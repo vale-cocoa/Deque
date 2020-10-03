@@ -47,8 +47,8 @@ extension DequeSlice: EquatableCollectionUsingCircularBuffer where Element: Comp
     
 }
 
-func assertAreDifferentValuesAndHaveDifferentStorage<C: EquatableCollectionUsingCircularBuffer, D: EquatableCollectionUsingCircularBuffer>(sut: C, copy: D, file: StaticString = #file, line: UInt = #line) where C.Element == D.Element {
-    XCTAssertNotEqual(Array(copy), Array(sut), "copy contains same elements of original after mutation", file: file, line: line)
-    XCTAssertFalse(sut.storage === copy.storage, "copy has same storage instance of original", file: file, line: line)
+func assertAreDifferentValuesAndHaveDifferentStorage<C: EquatableCollectionUsingCircularBuffer, D: EquatableCollectionUsingCircularBuffer>(lhs: C, rhs: D, file: StaticString = #file, line: UInt = #line) where C.Element == D.Element {
+    XCTAssertNotEqual(Array(lhs), Array(rhs), "copy contains same elements of original after mutation", file: file, line: line)
+    XCTAssertFalse(lhs.storage === rhs.storage, "copy has same storage instance of original", file: file, line: line)
 }
 
