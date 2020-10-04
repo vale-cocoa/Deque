@@ -1059,15 +1059,15 @@ final class DequeTests: XCTestCase {
     
     // MARK: - Performance tests
     func testDequePerformance() {
-        //measure(performanceLoopDeque)
+        measure(performanceLoopDeque)
     }
     
     func testArrayPerformance() {
-        //measure(performanceLoopArray)
+        measure(performanceLoopArray)
     }
     
     func testCircularBufferPerformance() {
-        //measure(performanceLoopCircularBuffer)
+        measure(performanceLoopCircularBuffer)
     }
     
     // MARK: - Private helpers
