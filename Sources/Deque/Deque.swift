@@ -663,14 +663,12 @@ extension Deque: CustomStringConvertible, CustomDebugStringConvertible {
 // MARK: - Private Interface
 // MARK: - Copy on write helpers
 extension Deque {
-    @inline(__always)
     private var _isUnique: Bool {
         mutating get {
             isKnownUniquelyReferenced(&storage)
         }
     }
     
-    @inline(__always)
     private mutating func _makeUnique(additionalCapacity: Int = 0) {
         if self.storage == nil {
             self.storage = CircularBuffer(capacity: additionalCapacity)
@@ -681,7 +679,6 @@ extension Deque {
         }
     }
     
-    @inline(__always)
     private mutating func _checkForEmptyAtEndOfMutation() {
         if self.storage?.count == 0 {
             self.storage = nil
