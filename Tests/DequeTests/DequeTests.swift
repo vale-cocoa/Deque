@@ -720,15 +720,24 @@ final class DequeTests: XCTestCase {
         // buffer doesn't get reallocated:
         sut.prepend(contentsOf: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         XCTAssertEqual(20 - sut.count, 10)
-        let prevStorageBaseAddress = sut.storage?.unsafeBufferPointer.baseAddress
+        let prevStorageBaseAddress = sut.storage?
+            .withUnsafeBufferPointer { buff in
+            return buff.baseAddress
+        }
         sut.reserveCapacity(10)
         XCTAssertEqual(20 - sut.count, 10)
-        XCTAssertTrue(sut.storage?.unsafeBufferPointer.baseAddress == prevStorageBaseAddress)
+        XCTAssertTrue(sut.storage?
+                        .withUnsafeBufferPointer { buff in
+                        return buff.baseAddress
+                    } == prevStorageBaseAddress)
         
         // otherwise buffer gets reallocated to a bigger one:
         XCTAssertGreaterThan(50, 20 - sut.count)
         sut.reserveCapacity(50)
-        XCTAssertFalse(sut.storage?.unsafeBufferPointer.baseAddress == prevStorageBaseAddress)
+        XCTAssertFalse(sut.storage?
+                        .withUnsafeBufferPointer { buff in
+                        return buff.baseAddress
+                    } == prevStorageBaseAddress)
     }
     func testReplaceSubrange() {
         // main functionalities guaranteed by CircularBuffer method
