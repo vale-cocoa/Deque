@@ -244,15 +244,21 @@ extension DequeSlice: Collection, MutableCollection, BidirectionalCollection {
     
     public mutating func withContiguousMutableStorageIfAvailable<R>(_ body: (inout UnsafeMutableBufferPointer<Base.Element>) throws -> R) rethrows -> R? {
         let bufferBounds = bounds
+        var work = DequeSlice()
+        (work, self) = (self, work)
         
-        return try base
+        defer {
+            (work, self) = (self, work)
+        }
+        
+        return try work.base
             .withContiguousMutableStorageIfAvailable { buffer in
                 var sliced = UnsafeMutableBufferPointer(rebasing: buffer[bufferBounds])
-                let copy = sliced
+                let slicedOriginal = sliced
                 defer {
                     precondition(
-                        sliced.baseAddress == copy.baseAddress &&
-                        sliced.count == copy.count,
+                        sliced.baseAddress == slicedOriginal.baseAddress &&
+                            sliced.count == slicedOriginal.count,
                         "DequeSlice withUnsafeMutableBufferPointer: replacing the buffer is not allowed"
                     )
                 }

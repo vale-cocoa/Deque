@@ -144,7 +144,7 @@ final class DequeSliceTests: XCTestCase {
     
     // MARK: - Additional tests
     // There is no need to further test other methods since
-    // they they just wrap Slice<Deque<Element>>.
+    // they just wrap Slice<Deque<Element>>.
     
     // MARK: - withContiguousStorageIfAvailable and withContiguousMutableStorageIfAvailable tests
     func testWithContiguousMutableStorageIfAvailable() {
