@@ -311,26 +311,28 @@ extension Deque: Collection, MutableCollection {
         var work = Deque()
         (work, self) = (self, work)
         
-        // Create an UnsafeMutableBufferPointer over work that we
-        // can pass to body
-        var inoutBuffer = work.storage!.unsafeMutableBufferPointer
-        let basePointer = inoutBuffer.baseAddress
-        let initialCount = inoutBuffer.count
-        
         // Put back in place the Deque
         defer {
-            precondition(basePointer == inoutBuffer.baseAddress && initialCount == inoutBuffer.count, "Deque withContiguousMutableStorageIfAvailable: replacing the buffer is not allowed")
             (work, self) = (self, work)
             _checkForEmptyAtEndOfMutation()
         }
         
-        // Invoke body
-        return try body(&inoutBuffer)
+        // Invoke body taking advantage of CircularBuffer's
+        // withUnsafeMutableBufferPointer(_:) method.
+        // Here it's safe to force-unwrap storage on work since
+        // it must not be nil having invoked _makeUnique() in the
+        // beginning.
+        return try work.storage!
+            .withUnsafeMutableBufferPointer(body)
     }
     
     public func withContiguousStorageIfAvailable<R>(_ body: (UnsafeBufferPointer<Element>) throws -> R) rethrows -> R? {
+        guard storage != nil else {
+            
+            return try body(UnsafeBufferPointer<Element>(start: nil, count: 0))
+        }
         
-        return try body(storage?.unsafeBufferPointer ?? UnsafeBufferPointer<Element>(start: nil, count: 0))
+        return try storage!.withUnsafeBufferPointer(body)
     }
     
     // MARK: - Functional methods

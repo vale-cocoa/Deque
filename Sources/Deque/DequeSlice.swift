@@ -253,7 +253,7 @@ extension DequeSlice: Collection, MutableCollection, BidirectionalCollection {
                     precondition(
                         sliced.baseAddress == copy.baseAddress &&
                         sliced.count == copy.count,
-                        "DequeSlice.withUnsafeMutableBufferPointer: replacing the buffer is not allowed"
+                        "DequeSlice withUnsafeMutableBufferPointer: replacing the buffer is not allowed"
                     )
                 }
                 
