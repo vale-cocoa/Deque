@@ -497,8 +497,7 @@ final class DequeTests: XCTestCase {
         }
         
         // Value semantics:
-        // sut was mutated after first slice was exctacted,
-        // therefore:
+        // sut was mutated after first slice was extracted, therefore:
         for idx in slice.startIndex..<slice.endIndex {
             XCTAssertNotEqual(slice[idx], sut[idx])
         }
@@ -715,30 +714,31 @@ final class DequeTests: XCTestCase {
         sut.reserveCapacity(20)
         XCTAssertTrue(sut.isEmpty)
         XCTAssertNotNil(sut.storage)
+        XCTAssertGreaterThanOrEqual(sut.capacity, 20)
         
         // when there are already enough free spots to cover it,
         // buffer doesn't get reallocated:
         sut.prepend(contentsOf: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        XCTAssertEqual(20 - sut.count, 10)
+        let prevResidualCapacity = sut.storage!.residualCapacity
+        XCTAssertGreaterThanOrEqual(prevResidualCapacity, 0)
         let prevStorageBaseAddress = sut.storage?
             .withUnsafeBufferPointer { buff in
             return buff.baseAddress
         }
-        sut.reserveCapacity(10)
-        XCTAssertEqual(20 - sut.count, 10)
+        sut.reserveCapacity(prevResidualCapacity)
         XCTAssertTrue(sut.storage?
                         .withUnsafeBufferPointer { buff in
                         return buff.baseAddress
                     } == prevStorageBaseAddress)
         
         // otherwise buffer gets reallocated to a bigger one:
-        XCTAssertGreaterThan(50, 20 - sut.count)
-        sut.reserveCapacity(50)
+        sut.reserveCapacity(prevResidualCapacity + 1)
         XCTAssertFalse(sut.storage?
                         .withUnsafeBufferPointer { buff in
                         return buff.baseAddress
                     } == prevStorageBaseAddress)
     }
+    
     func testReplaceSubrange() {
         // main functionalities guaranteed by CircularBuffer method
         // replace(subrange:with:)
@@ -761,7 +761,7 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(Array(sut), [10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         
         // When the storage is nil and nothing gets added by the
-        // replace, then storage stills nil:
+        // replace, then storage is nil still:
         sut = Deque<Int>()
         XCTAssertNil(sut.storage)
         sut.replaceSubrange(0..<0, with: [])
@@ -784,7 +784,7 @@ final class DequeTests: XCTestCase {
     
     func testAppendElement() {
         // Main functionalities backed by CircularBuffer.
-        // We are just gonna check value semnatics here:
+        // We are just gonna check value semantics here:
         var copy = sut!
         copy.append(1)
         assertValueSemantics(copy)
@@ -819,7 +819,7 @@ final class DequeTests: XCTestCase {
         // Main functionalities are backed by CircularBuffer,
         // therefore we jsut test a special case here: when storage
         // is empty and collection is empty too, then storage is
-        // still equal to nil.
+        // equal to nil still.
         XCTAssertNil(sut.storage)
         sut.insert(contentsOf: [], at: sut.endIndex)
         XCTAssertNil(sut.storage)
@@ -981,7 +981,7 @@ final class DequeTests: XCTestCase {
         assertValueSemantics(copy)
     }
     
-    // MARK: - Tests Equatable conformance
+    // MARK: - Equatable and Hasable conformances tests
     func testEquatable() {
         XCTAssertEqual(sut, Deque<Int>())
         

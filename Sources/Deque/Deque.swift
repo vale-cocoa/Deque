@@ -36,39 +36,17 @@ public struct Deque<Element> {
     /// Returns a new empty `Deque` instance.
     public init() { }
     
-    /// Returns a new `Deque` instance initialized with the contents of the given
+    /// Returns a new `Deque` instance storing the contents of the given
     /// sequence of elements.
     ///
-    /// - Parameter _: the sequence of elements to initialize with.
-    /// - Returns:  a new `Deque` instance containing all the elements of the given
+    /// - Parameter _: The sequence of elements to initialize with.
+    /// - Returns:  A new `Deque` instance containing all the elements of the given
     ///             sequence, stored in the same order.
-    /// - Complexity:   O(*n*) where *n* is the number of elements of the given
-    ///                 sequence. Amortized O(1) in case the given sequence's
-    ///                 method
-    ///                 `withContiguousStorageIfAvailable(_:)` offers a
-    ///                 view into all its elements.
     public init<S: Sequence>(_ elements: S) where S.Iterator.Element == Element {
         let newStorage = CircularBuffer(elements: elements)
         guard !newStorage.isEmpty else { return }
         
         storage = newStorage
-    }
-    
-    /// Returns a new `Deque` instance initialized with the contents of the given
-    /// collection of elements.
-    ///
-    /// - Parameter _: the collection of elements to initialize with.
-    /// - Returns:  a new `Deque` instance containing all the elements of the given
-    ///             collection, stored in the same order.
-    /// - Complexity:   O(*n*) where *n* is count of elements of the given
-    ///                 collection. Amortized O(1) in case the given collection's
-    ///                 method
-    ///                 `withContiguousStorageIfAvailable(_:)` offers a
-    ///                 view into all its stored elements.
-    public init<C: Collection>(_ elements: C) where C.Iterator.Element == Element {
-        guard !elements.isEmpty else { return }
-        
-        storage = CircularBuffer(elements: elements)
     }
     
 }
@@ -274,14 +252,15 @@ extension Deque: RandomAccessCollection {
 extension Deque: RangeReplaceableCollection {
     public mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C) where C : Collection, Self.Element == C.Element {
         let difference = (count - subrange.count + newElements.count) - count
-        let additionalCapacity = difference < 0 ? 0 : difference
+        let additionalCapacity = _additionalCapacityNeeded(forReservingCapacity: difference)
         _makeUnique(additionalCapacity: additionalCapacity)
-        storage!.replace(subRange: subrange, with: newElements)
+        storage!.replace(subrange: subrange, with: newElements)
         _checkForEmptyAtEndOfMutation()
     }
     
     public mutating func reserveCapacity(_ n: Int) {
-        let additionalCapacity = n - count > 0 ? n - count : 0
+        let additionalCapacity = _additionalCapacityNeeded(forReservingCapacity: n)
+        
         _makeUnique(additionalCapacity: additionalCapacity)
     }
     
@@ -297,7 +276,8 @@ extension Deque: RangeReplaceableCollection {
     }
     
     public mutating func append<S>(contentsOf newElements: S) where S : Sequence, Self.Element == S.Iterator.Element {
-        _makeUnique(additionalCapacity: newElements.underestimatedCount)
+        let additionalCapacity = _additionalCapacityNeeded(forReservingCapacity: newElements.underestimatedCount)
+        _makeUnique(additionalCapacity: additionalCapacity)
         storage!.append(contentsOf: newElements)
         _checkForEmptyAtEndOfMutation()
     }
@@ -308,7 +288,8 @@ extension Deque: RangeReplaceableCollection {
     }
     
     public mutating func insert<C: Collection>(contentsOf newElements: C, at i: Self.Index) where  Self.Element == C.Element {
-        _makeUnique(additionalCapacity: newElements.count)
+        let additionalCapacity = _additionalCapacityNeeded(forReservingCapacity: newElements.underestimatedCount)
+        _makeUnique(additionalCapacity: additionalCapacity)
         storage!.insertAt(index: i, contentsOf: newElements)
         _checkForEmptyAtEndOfMutation()
     }
@@ -440,11 +421,10 @@ extension Deque: Queue {
 extension Deque {
     /// Removes and returns the first *k* elements in the queue.
     ///
-    /// - Parameter _:  an `Int` value specifying the number of elements to
+    /// - Parameter _:  An `Int` value specifying the number of elements to
     ///                 dequeue. Must be greater than or eqaul to `0` and less than
     ///                 or equal `count` value.
-    /// - Returns: an array with the first *k* elements in the queue.
-    /// - Complexity: Amortized O(1).
+    /// - Returns: An array containing the first *k* elements in the queue.
     @discardableResult
     public mutating func dequeue(_ k: Int) -> [Element] {
         _makeUnique()
@@ -455,11 +435,11 @@ extension Deque {
         return storage!.removeFirst(k)
     }
     
-    /// Insert the given element on top of deque's contained elements.
+    /// Insert the given element on top of deque's stored elements.
     ///
-    /// - Parameter _:  the new element to add to the deque as its new
+    /// - Parameter _:  The new element to add to the deque as its new
     ///                 `first` element.
-    /// - Complexity: Amortized O(1)
+    /// - Complexity: Amortized O(1).
     public mutating func push(_ newElement: Element) {
         _makeUnique()
         storage!.push(newElement)
@@ -468,7 +448,7 @@ extension Deque {
     /// Pushes the elements of the given sequence, at the top of the deque.
     ///
     /// The push operation will result as the same as iterating over the sequence's
-    /// elements, doing a `push(_:)` for each iterated element.
+    /// elements and doing a `push(_:)` for each iterated element.
     /// For example:
     /// ```
     /// var deque = Deque<Int>()
@@ -476,45 +456,19 @@ extension Deque {
     /// deque.push(contentsOf: sequence)
     /// // deque == [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
     /// ```
-    /// - Parameter contentsOf: the sequence containing the elements to push.
-    /// - Complexity:    O(*n*) where *n* is the count of elements of the
-    ///                  given sequence. Amortized O(1) when the given
-    ///                  sequence's implementation of
-    ///                  `withContiguousStorageIfAvailable(_:)`
-    ///                  method offers a view into all its elements.
+    /// - Parameter contentsOf: The sequence containing the elements to push.
     public mutating func push<S: Sequence>(contentsOf newElements: S) where S.Iterator.Element == Element {
-        _makeUnique(additionalCapacity: newElements.underestimatedCount)
+        let additionalCapacity = _additionalCapacityNeeded(forReservingCapacity: newElements.underestimatedCount)
+        _makeUnique(additionalCapacity: additionalCapacity)
         storage!.push(contentsOf: newElements)
         _checkForEmptyAtEndOfMutation()
     }
     
-    /// Pushes the elements of the given collection, at the top of the deque.
+    /// Put the elements of the given sequence, at the top of the deque in the same order as they were appearing in
+    /// the sequence.
     ///
-    /// The push operation will result as the same as iterating over the collection's
-    /// elements, doing a `push(_:)` for each iterated element.
-    /// For example:
-    /// ```
-    /// var deque = Deque<Int>()
-    /// let collection = 1...10
-    /// deque.push(contentsOf: collection)
-    /// // deque == [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-    /// ```
-    /// - Parameter contentsOf: the collection containing the elements to push.
-    /// - Complexity:    O(*n*) where *n* is the count of elements of the
-    ///                  given collection. Amortized O(1) when the given
-    ///                  collection's implementation of
-    ///                  `withContiguousStorageIfAvailable(_:)`
-    ///                  method offers a view into all its elements.
-    public mutating func push<C: Collection>(contentsOf newElements: C) where C.Iterator.Element == Element {
-        _makeUnique(additionalCapacity: newElements.count)
-        storage!.prepend(contentsOf: newElements.reversed())
-        _checkForEmptyAtEndOfMutation()
-    }
-    
-    /// Put the elements of the given sequence, at the top of the deque in the same order.
-    ///
-    /// The prepend operation will result as the same as iterating over the sequence's
-    /// elements, doing a `insert(at: 0, …)` for each iterated element.
+    /// The prepend operation will result as the same as iterating over the reversed sequence's
+    /// elements, doing a `push(_:)` with each iterated element.
     /// For example:
     /// ```
     /// var deque = Deque<Int>()
@@ -522,14 +476,10 @@ extension Deque {
     /// deque.prepend(contentsOf: sequence)
     /// // deque == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     /// ```
-    /// - Parameter contentsOf: the sequence containing the elements to prepend.
-    /// - Complexity:    O(*n*) where *n* is the count of elements of the
-    ///                  given sequence. Amortized O(1) when the given
-    ///                  sequence's implementation of
-    ///                  `withContiguousStorageIfAvailable(_:)`
-    ///                  method offers a view into all its elements.
+    /// - Parameter contentsOf: The sequence containing the elements to prepend.
     public mutating func prepend<S: Sequence>(contentsOf newElements: S) where S.Iterator.Element == Element {
-        _makeUnique(additionalCapacity: newElements.underestimatedCount)
+        let additionalCapacity = _additionalCapacityNeeded(forReservingCapacity: newElements.underestimatedCount)
+        _makeUnique(additionalCapacity: additionalCapacity)
         guard
             let _ = newElements
                 .withContiguousStorageIfAvailable ({ buffer -> Bool in
@@ -550,30 +500,7 @@ extension Deque {
         _checkForEmptyAtEndOfMutation()
     }
     
-    /// Put the elements of the given collection, at the top of the deque in the same order.
-    ///
-    /// The prepend operation will result as the same as iterating over the collection's
-    /// elements, doing a `insert(at: 0, …)` for each iterated element.
-    /// For example:
-    /// ```
-    /// var deque = Deque<Int>()
-    /// let collection = 1...10
-    /// deque.prepend(contentsOf: collection)
-    /// // deque == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    /// ```
-    /// - Parameter contentsOf: the collection containing the elements to prepend.
-    /// - Complexity:    O(*n*) where *n* is the count of elements of the
-    ///                  given collection. Amortized O(1) when the given
-    ///                  collection's implementation of
-    ///                  `withContiguousStorageIfAvailable(_:)`
-    ///                  method offers a view into all its elements.
-    public mutating func prepend<C: Collection>(contentsOf newElements: C) where C.Iterator.Element == Element {
-        _makeUnique(additionalCapacity: newElements.count)
-        storage!.prepend(contentsOf: newElements)
-        _checkForEmptyAtEndOfMutation()
-    }
 }
-
 
 // MARK: - ExpressibleByArrayLiteral conformance
 extension Deque: ExpressibleByArrayLiteral {
@@ -681,7 +608,7 @@ extension Deque {
         } else if !_isUnique {
             storage = storage!.copy(additionalCapacity: additionalCapacity)
         } else if additionalCapacity > 0 {
-            storage!.allocateAdditionalCapacity(additionalCapacity)
+            storage!.reserveCapacity(storage!.residualCapacity + additionalCapacity)
         }
     }
     
@@ -689,6 +616,15 @@ extension Deque {
         if self.storage?.count == 0 {
             self.storage = nil
         }
+    }
+    
+    @inline(__always)
+    private func _additionalCapacityNeeded(forReservingCapacity n: Int) -> Int {
+        guard n > 0  else { return 0 }
+        
+        let residual = storage?.residualCapacity ?? 0
+        
+        return n - residual > 0 ? n - residual : 0
     }
     
 }
