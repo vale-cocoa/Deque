@@ -1,3 +1,23 @@
+//
+//  DequeTests.swift
+//  DequeTests
+//
+//  Created by Valeriano Della Longa on 2020/09/29.
+//  Copyright © 2020 Valeriano Della Longa. All rights reserved.
+//
+//  Permission to use, copy, modify, and/or distribute this software for any
+//  purpose with or without fee is hereby granted, provided that the above
+//  copyright notice and this permission notice appear in all copies.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+//  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+//  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+//  SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+//  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+//  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+//  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+//
+
 import XCTest
 @testable import Deque
 import CircularBuffer
@@ -556,6 +576,28 @@ final class DequeTests: XCTestCase {
         }
         wait(for: [exp3], timeout: 1)
         assertValueSemantics(copy)
+        
+        // Slice implementation works too:
+        sut = Deque(1...10)
+        var slice = sut[1...3]
+        var sliceBuffElements: Array<Int>!
+        let exp4 = expectation(description: "closure completes")
+        let result4 = slice.withContiguousMutableStorageIfAvailable { buff -> Bool in
+            defer { exp4.fulfill() }
+            sliceBuffElements = []
+            for i in buff.startIndex..<buff.endIndex {
+                buff[i] *= 10
+                sliceBuffElements.append(buff[i])
+            }
+            
+            return true
+        }
+        wait(for: [exp4], timeout: 0.1)
+        XCTAssertNotNil(result4)
+        XCTAssertEqual(sliceBuffElements, Array(slice))
+        
+        // value semantics on Slice:
+        XCTAssertNotEqual(sut, slice.base)
     }
     
     func testWithContiguousStorageIfAvailable() {
@@ -586,6 +628,21 @@ final class DequeTests: XCTestCase {
         wait(for: [exp2], timeout: 1)
         XCTAssertNotNil(result2)
         XCTAssertEqual(copiedValues, Array(sut[rangeToPick]))
+        
+        // works also for Slice:
+        sut = Deque(1...10)
+        let slice = sut[1...3]
+        var sliceBuffElements: Array<Int>!
+        let exp4 = expectation(description: "closure completes")
+        let result3 = slice.withContiguousStorageIfAvailable { buff -> Bool in
+            defer { exp4.fulfill() }
+            sliceBuffElements = Array(buff)
+            
+            return true
+        }
+        wait(for: [exp4], timeout: 0.1)
+        XCTAssertNotNil(result3)
+        XCTAssertEqual(sliceBuffElements, Array(slice))
     }
     
     // MARK: - Functional Programming methods
@@ -740,40 +797,8 @@ final class DequeTests: XCTestCase {
     }
     
     func testReplaceSubrange() {
-        // main functionalities guaranteed by CircularBuffer method
-        // replace(subrange:with:)
-        // We just do a few basic tests here:
-        sut = [1, 2, 3, 4, 5]
-        sut.replaceSubrange(1...3, with: [20, 30, 40])
-        XCTAssertEqual(Array(sut), [1, 20, 30, 40, 5])
-        
-        sut = [1, 2, 3, 4, 5]
-        sut.replaceSubrange(sut.startIndex..<sut.startIndex, with: [10, 20, 30, 40, 50])
-        XCTAssertEqual(Array(sut), [10, 20, 30, 40, 50, 1, 2, 3, 4, 5])
-        
-        sut.replaceSubrange(sut.endIndex..<sut.endIndex, with: [60, 70, 80, 90, 100])
-        XCTAssertEqual(Array(sut), [10, 20, 30, 40, 50, 1, 2, 3, 4, 5, 60, 70, 80, 90, 100])
-        
-        sut.replaceSubrange(5..<10, with: [0])
-        XCTAssertEqual(Array(sut), [10, 20, 30, 40, 50, 0, 60, 70, 80, 90, 100])
-        
-        sut.replaceSubrange(5..<6, with: [])
-        XCTAssertEqual(Array(sut), [10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        
-        // When the storage is nil and nothing gets added by the
-        // replace, then storage is nil still:
-        sut = Deque<Int>()
-        XCTAssertNil(sut.storage)
-        sut.replaceSubrange(0..<0, with: [])
-        XCTAssertNil(sut.storage)
-        
-        // when storage is not nil, and replace erases all elements,
-        // then storage becomes nil:
-        sut = [1, 2, 3, 4, 5]
-        XCTAssertNotNil(sut.storage)
-        sut.replaceSubrange(sut.startIndex..<sut.endIndex, with: [])
-        XCTAssertTrue(sut.isEmpty)
-        XCTAssertNil(sut.storage)
+        // Leverages on CircularBuffer thus it is guaranteed
+        // by CircularBufferTests.
         
         // value semantics:
         sut = [1, 2, 3, 4, 5]
@@ -783,8 +808,10 @@ final class DequeTests: XCTestCase {
     }
     
     func testAppendElement() {
-        // Main functionalities backed by CircularBuffer.
-        // We are just gonna check value semantics here:
+        // Leverages on CircularBuffer thus it is guaranteed
+        // by CircularBufferTests.
+        
+        // value semantics:
         var copy = sut!
         copy.append(1)
         assertValueSemantics(copy)
@@ -806,9 +833,10 @@ final class DequeTests: XCTestCase {
     }
     
     func testInsertElementAt() {
-        // Main functionalities are backed by CircularBuffer.
-        // We are going to just test value semantics here:
+        // Leverages on CircularBuffer thus it is guaranteed
+        // by CircularBufferTests.
         
+        // value semantics:
         sut = [1, 2, 3, 4, 5]
         var copy = sut!
         copy.insert(0, at: 0)
@@ -817,7 +845,7 @@ final class DequeTests: XCTestCase {
     
     func testInsertContentsOfCollectionAt() {
         // Main functionalities are backed by CircularBuffer,
-        // therefore we jsut test a special case here: when storage
+        // therefore we just test a special case here: when storage
         // is empty and collection is empty too, then storage is
         // equal to nil still.
         XCTAssertNil(sut.storage)
@@ -864,17 +892,8 @@ final class DequeTests: XCTestCase {
     }
     
     func testRemoveFirstElement() {
-        let elements = [1, 2, 3]
-        sut = Deque(elements)
-        
-        XCTAssertEqual(sut.removeFirst(), elements.first)
-        XCTAssertEqual(sut.count, elements.count - 1)
-        XCTAssertEqual(Array(sut), Array(elements.dropFirst()))
-        
-        sut = [1]
-        let _ = sut.removeFirst()
-        XCTAssertTrue(sut.isEmpty)
-        XCTAssertNil(sut.storage)
+        // Leverages on CircularBuffer thus it is guaranteed
+        // by CircularBufferTests.
         
         // value semantics:
         sut = [1, 2, 3, 4, 5]
@@ -884,15 +903,10 @@ final class DequeTests: XCTestCase {
     }
     
     func testRemoveFirstKElements() {
-        // Main functionalities are backed by CircularBuffer, we
-        // just test a special case here: when removal makes the
-        // deque instance empty, then storage is nil
-        sut = [1, 2, 3, 4, 5]
-        sut.removeFirst(5)
-        XCTAssertTrue(sut.isEmpty)
-        XCTAssertNil(sut.storage)
+        // Leverages on CircularBuffer thus it is guaranteed
+        // by CircularBufferTests.
         
-        // …and value semantics as well:
+        // value semantics:
         sut = [1, 2, 3, 4, 5]
         var copy = sut!
         copy.removeFirst(2)
@@ -1066,144 +1080,7 @@ final class DequeTests: XCTestCase {
         XCTAssertEqual(sut.debugDescription, "Optional(Deque.Deque<Swift.Int>([1, 2, 3, 4, 5]))")
     }
     
-    // MARK: - Performance tests
-    func testDequePerformanceAtSmallCount() {
-        measure(performanceLoopDequeSmallCount)
-    }
-    
-    func testArrayPerformanceAtSmallCount() {
-        measure(performanceLoopArraySmallCount)
-    }
-    
-    func testCircularBufferPerformanceAtSmallCount() {
-        measure(performanceLoopCircularBufferSmallCount)
-    }
-    
-    func testDequePreformanceAtLargeCount() {
-        measure(performanceLoopDequeLargeCount)
-    }
-    
-    func testArrayPerformanceAtLargeCount() {
-        measure(performanceLoopArrayLargeCount)
-    }
-    
-    func testCircularBufferPerformanceAtLargeCount() {
-        measure(performanceLoopCircularBufferLargeCount)
-    }
-    
-    // MARK: - Private helpers
-    private func performanceLoopDequeSmallCount() {
-        let outerCount: Int = 10_000
-        let innerCount: Int = 20
-        var accumulator = 0
-        for _ in 1...outerCount {
-            var deque = Deque<Int>()
-            deque.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                deque.append(i)
-                accumulator ^= (deque.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (deque.first ?? 0)
-                deque.popFirst()
-            }
-        }
-        XCTAssert(accumulator == 0)
-    }
-    
-    private func performanceLoopArraySmallCount() {
-        let outerCount: Int = 10_000
-        let innerCount: Int = 20
-        var accumulator = 0
-        for _ in 1...outerCount {
-            var array = Array<Int>()
-            array.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                array.append(i)
-                accumulator ^= (array.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (array.first ?? 0)
-                array.remove(at: 0)
-            }
-        }
-        XCTAssert(accumulator == 0)
-    }
-    
-    private func performanceLoopCircularBufferSmallCount() {
-        let outerCount: Int = 10_000
-        let innerCount: Int = 20
-        var accumulator = 0
-        for _ in 1...outerCount {
-            let ringBuffer = CircularBuffer<Int>(capacity: innerCount)
-            for i in 1...innerCount {
-                ringBuffer.append(i)
-                accumulator ^= (ringBuffer.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (ringBuffer.first ?? 0)
-                ringBuffer.popFirst()
-            }
-        }
-        XCTAssert(accumulator == 0)
-    }
-    
-    private func performanceLoopDequeLargeCount() {
-        let outerCount: Int = 10
-        let innerCount: Int = 20_000
-        var accumulator = 0
-        for _ in 1...outerCount {
-            var deque = Deque<Int>()
-            deque.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                deque.append(i)
-                accumulator ^= (deque.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (deque.first ?? 0)
-                deque.popFirst()
-            }
-        }
-        XCTAssert(accumulator == 0)
-    }
-    
-    private func performanceLoopArrayLargeCount() {
-        let outerCount: Int = 10
-        let innerCount: Int = 20_000
-        var accumulator = 0
-        for _ in 1...outerCount {
-            var array = Array<Int>()
-            array.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                array.append(i)
-                accumulator ^= (array.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (array.first ?? 0)
-                array.remove(at: 0)
-            }
-        }
-        XCTAssert(accumulator == 0)
-    }
-    
-    private func performanceLoopCircularBufferLargeCount() {
-        let outerCount: Int = 10
-        let innerCount: Int = 20_000
-        var accumulator = 0
-        for _ in 1...outerCount {
-            let ringBuffer = CircularBuffer<Int>(capacity: innerCount)
-            for i in 1...innerCount {
-                ringBuffer.append(i)
-                accumulator ^= (ringBuffer.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (ringBuffer.first ?? 0)
-                ringBuffer.popFirst()
-            }
-        }
-        XCTAssert(accumulator == 0)
-    }
-    
+    // MARK: - Helpers
     func assertValueSemantics(_ copy: Deque<Int>, file: StaticString = #file, line: UInt = #line) {
         assertAreDifferentValuesAndHaveDifferentStorage(lhs: sut, rhs: copy, file: file, line: line)
     }

@@ -2,7 +2,7 @@
 //  Deque.swift
 //  Deque
 //
-//  Created by Valeriano Della Longa on 29/09/2020.
+//  Created by Valeriano Della Longa on 2020/09/29.
 //  Copyright © 2020 Valeriano Della Longa. All rights reserved.
 //
 //  Permission to use, copy, modify, and/or distribute this software for any
@@ -60,7 +60,7 @@ extension Deque: Collection, MutableCollection {
     
     public typealias Iterator = IndexingIterator<Deque<Element>>
     
-    public typealias SubSequence = DequeSlice<Element>
+    public typealias SubSequence = Slice<Deque<Element>>
     
     public var startIndex: Int { 0 }
     

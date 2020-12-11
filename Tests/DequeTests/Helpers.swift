@@ -40,13 +40,6 @@ protocol EquatableCollectionUsingCircularBuffer: Collection where Element: Equat
 
 extension Deque: EquatableCollectionUsingCircularBuffer where Element: Comparable {  }
 
-extension DequeSlice: EquatableCollectionUsingCircularBuffer where Element: Comparable {
-    var storage: CircularBuffer<Base.Element>? {
-        _slice.base.storage
-    }
-    
-}
-
 func assertAreDifferentValuesAndHaveDifferentStorage<C: EquatableCollectionUsingCircularBuffer, D: EquatableCollectionUsingCircularBuffer>(lhs: C, rhs: D, file: StaticString = #file, line: UInt = #line) where C.Element == D.Element {
     XCTAssertNotEqual(Array(lhs), Array(rhs), "copy contains same elements of original after mutation", file: file, line: line)
     XCTAssertFalse(lhs.storage === rhs.storage, "copy has same storage instance of original", file: file, line: line)
