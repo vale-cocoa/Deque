@@ -23,140 +23,129 @@ import Deque
 import CircularBuffer
 
 final class DequePerformanceTests: XCTestCase {
+    var sut: (outerCount: Int, innerCount: Int)!
+    
     func testDequePerformanceAtSmallCount() {
-        measure(performanceLoopDequeSmallCount)
+        whenSmallCount()
+        measure { performanceLoop(for: .deque) }
     }
     
     func testArrayPerformanceAtSmallCount() {
-        measure(performanceLoopArraySmallCount)
+        whenSmallCount()
+        measure { performanceLoop(for: .array) }
     }
     
     func testCircularBufferPerformanceAtSmallCount() {
-        measure(performanceLoopCircularBufferSmallCount)
+        whenSmallCount()
+        measure { performanceLoop(for: .circularBuffer) }
     }
     
     func testDequePreformanceAtLargeCount() {
-        measure(performanceLoopDequeLargeCount)
+        whenLargeCount()
+        measure { performanceLoop(for: .deque) }
     }
     
     func testArrayPerformanceAtLargeCount() {
-        measure(performanceLoopArrayLargeCount)
+        whenLargeCount()
+        measure { performanceLoop(for: .array) }
     }
     
     func testCircularBufferPerformanceAtLargeCount() {
-        measure(performanceLoopCircularBufferLargeCount)
+        whenLargeCount()
+        measure { performanceLoop(for: .circularBuffer) }
     }
     
     // MARK: - Private helpers
-    private func performanceLoopDequeSmallCount() {
-        let outerCount: Int = 10_000
-        let innerCount: Int = 20
+    private func performanceLoop(for kind: KindOfTestable) {
         var accumulator = 0
-        for _ in 1...outerCount {
-            var deque = Deque<Int>()
-            deque.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                deque.append(i)
-                accumulator ^= (deque.last ?? 0)
+        for _ in 1...sut.outerCount {
+            var testable = kind.newTestable(capacity: sut.innerCount)
+            for i in 1...sut.innerCount {
+                testable.enqueue(i)
+                accumulator ^= (testable.last ?? 0)
             }
-            for _ in 1...innerCount {
-                accumulator ^= (deque.first ?? 0)
-                deque.popFirst()
+            for _ in 1...sut.innerCount {
+                accumulator ^= (testable.first ?? 0)
+                testable.dequeue()
             }
         }
         XCTAssert(accumulator == 0)
     }
     
-    private func performanceLoopArraySmallCount() {
-        let outerCount: Int = 10_000
-        let innerCount: Int = 20
-        var accumulator = 0
-        for _ in 1...outerCount {
-            var array = Array<Int>()
-            array.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                array.append(i)
-                accumulator ^= (array.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (array.first ?? 0)
-                array.remove(at: 0)
-            }
-        }
-        XCTAssert(accumulator == 0)
+    private func whenSmallCount() {
+        sut = (10_000, 20)
     }
     
-    private func performanceLoopCircularBufferSmallCount() {
-        let outerCount: Int = 10_000
-        let innerCount: Int = 20
-        var accumulator = 0
-        for _ in 1...outerCount {
-            let ringBuffer = CircularBuffer<Int>(capacity: innerCount)
-            for i in 1...innerCount {
-                ringBuffer.append(i)
-                accumulator ^= (ringBuffer.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (ringBuffer.first ?? 0)
-                ringBuffer.popFirst()
-            }
-        }
-        XCTAssert(accumulator == 0)
+    private func whenLargeCount() {
+        sut = (10, 20_000)
     }
     
-    private func performanceLoopDequeLargeCount() {
-        let outerCount: Int = 10
-        let innerCount: Int = 20_000
-        var accumulator = 0
-        for _ in 1...outerCount {
-            var deque = Deque<Int>()
-            deque.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                deque.append(i)
-                accumulator ^= (deque.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (deque.first ?? 0)
-                deque.popFirst()
+    private enum KindOfTestable {
+        case circularBuffer
+        case array
+        case deque
+        
+        func newTestable(capacity: Int) -> PerformanceTestable {
+            switch self {
+            case .circularBuffer:
+                return CircularBuffer<Int>(capacity: capacity)
+            case .array:
+                return Array<Int>(capacity: capacity)
+            case .deque:
+                return Deque(capacity: capacity)
             }
         }
-        XCTAssert(accumulator == 0)
     }
     
-    private func performanceLoopArrayLargeCount() {
-        let outerCount: Int = 10
-        let innerCount: Int = 20_000
-        var accumulator = 0
-        for _ in 1...outerCount {
-            var array = Array<Int>()
-            array.reserveCapacity(innerCount)
-            for i in 1...innerCount {
-                array.append(i)
-                accumulator ^= (array.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (array.first ?? 0)
-                array.remove(at: 0)
-            }
-        }
-        XCTAssert(accumulator == 0)
+}
+
+fileprivate protocol PerformanceTestable {
+    init(capacity: Int)
+    
+    var first: Int? { get }
+    
+    var last: Int? { get }
+    
+    mutating func enqueue(_ newElement: Int)
+    
+    @discardableResult
+    mutating func dequeue() -> Int?
+}
+
+extension CircularBuffer: PerformanceTestable where Element == Int{
+    convenience init(capacity: Int) {
+        self.init(capacity: capacity, usingSmartCapacityPolicy: true)
     }
     
-    private func performanceLoopCircularBufferLargeCount() {
-        let outerCount: Int = 10
-        let innerCount: Int = 20_000
-        var accumulator = 0
-        for _ in 1...outerCount {
-            let ringBuffer = CircularBuffer<Int>(capacity: innerCount)
-            for i in 1...innerCount {
-                ringBuffer.append(i)
-                accumulator ^= (ringBuffer.last ?? 0)
-            }
-            for _ in 1...innerCount {
-                accumulator ^= (ringBuffer.first ?? 0)
-                ringBuffer.popFirst()
-            }
-        }
-        XCTAssert(accumulator == 0)
+    func enqueue(_ newElement: Element) {
+        append(newElement)
+    }
+    
+    func dequeue() -> Element? {
+        popFirst()
+    }
+    
+}
+
+extension Array: PerformanceTestable where Element == Int {
+    init(capacity: Int) {
+        self.init()
+        reserveCapacity(capacity)
+    }
+    
+    mutating func enqueue(_ newElement: Element) {
+        append(newElement)
+    }
+    
+    mutating func dequeue() -> Element? {
+        isEmpty ? nil : removeFirst()
+    }
+    
+}
+
+extension Deque: PerformanceTestable where Element == Int {
+    init(capacity: Int) {
+        self.init()
+        reserveCapacity(capacity)
     }
 }
